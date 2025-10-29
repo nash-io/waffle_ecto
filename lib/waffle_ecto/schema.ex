@@ -79,7 +79,7 @@ defmodule Waffle.Ecto.Schema do
             |> convert_params_to_binary()
             |> Map.take(allowed_param_keys)
             |> check_and_apply_scope(scope, options)
-            |> Enum.into(%{})
+            |> Map.new()
         end
 
       Ecto.Changeset.cast(changeset_or_data, waffle_params, allowed)
@@ -92,11 +92,11 @@ defmodule Waffle.Ecto.Schema do
   def check_and_apply_scope(params, scope, options) do
     params
     |> Enum.reduce([], fn {field, value}, fields ->
-        [{field, apply_scope(value, scope, options)} | fields]
+      [{field, apply_scope(value, scope, options)} | fields]
     end)
     |> Enum.reject(fn
       {_field, :invalid} -> true
-      {_field, values} when is_list(values) -> Enum.any?(values, & &1 == :invalid)
+      {_field, values} when is_list(values) -> Enum.any?(values, &(&1 == :invalid))
       _else -> false
     end)
   end
@@ -107,7 +107,13 @@ defmodule Waffle.Ecto.Schema do
   end
 
   def apply_scope(values, scope, options) when is_list(values) do
-    Enum.map(values, & apply_scope(&1, scope, options))
+    Enum.map(values, &apply_scope(&1, scope, options))
+  end
+
+  # Allow casting already uploaded files
+  def apply_scope(%{file_name: filename, updated_at: %NaiveDateTime{}} = existing_file, _scope, _options)
+      when is_binary(filename) do
+    existing_file
   end
 
   # Allow casting Plug.Uploads
@@ -115,13 +121,15 @@ defmodule Waffle.Ecto.Schema do
     {upload, scope}
   end
 
-   # Allow casting binary data structs
-  def apply_scope(%{filename: filename, binary: binary} = upload, scope, _options) when is_binary(filename) and is_binary(binary) do
+  # Allow casting binary data structs
+  def apply_scope(%{filename: filename, binary: binary} = upload, scope, _options)
+      when is_binary(filename) and is_binary(binary) do
     {upload, scope}
   end
 
   # If casting a binary (path), ensure we've explicitly allowed paths
-  def apply_scope(%{filename: filename, path: path} = upload, scope, options) when is_binary(filename) and is_binary(path) do
+  def apply_scope(%{filename: filename, path: path} = upload, scope, options)
+      when is_binary(filename) and is_binary(path) do
     path = String.trim(path)
 
     if path_allowed?(path, options) do

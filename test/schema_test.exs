@@ -1,12 +1,16 @@
 defmodule WaffleTest.Ecto.Schema do
+  @moduledoc false
   use ExUnit.Case, async: false
-  import Mock
+
   import ExUnit.CaptureLog
+  import Mock
 
   defmodule TestUser do
+    @moduledoc false
     use Ecto.Schema
-    import Ecto.Changeset
     use Waffle.Ecto.Schema
+
+    import Ecto.Changeset
 
     schema "users" do
       field(:first_name, :string)
@@ -41,7 +45,7 @@ defmodule WaffleTest.Ecto.Schema do
       |> cast_attachments(params, ~w(avatar)a)
     end
 
-     def images_changeset(user, params \\ :invalid) do
+    def images_changeset(user, params \\ :invalid) do
       user
       |> cast(params, ~w(first_name)a)
       |> cast_attachments(params, ~w(images)a)
@@ -61,8 +65,7 @@ defmodule WaffleTest.Ecto.Schema do
   end
 
   test_with_mock "cascades storage success into a valid change", DummyDefinition,
-    store: fn {%{__struct__: Plug.Upload, path: "/path/to/my/file.png", filename: "file.png"},
-               %TestUser{}} ->
+    store: fn {%{__struct__: Plug.Upload, path: "/path/to/my/file.png", filename: "file.png"}, %TestUser{}} ->
       {:ok, "file.png"}
     end do
     upload = build_upload("/path/to/my/file.png")
@@ -72,8 +75,7 @@ defmodule WaffleTest.Ecto.Schema do
   end
 
   test_with_mock "cascades storage success with an array", DummyDefinition,
-    store: fn {%{__struct__: Plug.Upload, path: "/path/to/my/file.png", filename: "file.png"},
-               %TestUser{}} ->
+    store: fn {%{__struct__: Plug.Upload, path: "/path/to/my/file.png", filename: "file.png"}, %TestUser{}} ->
       {:ok, "file.png"}
     end do
     upload1 = build_upload("/path/to/my/file.png")
@@ -90,8 +92,7 @@ defmodule WaffleTest.Ecto.Schema do
   end
 
   test_with_mock "cascades storage error into an error", DummyDefinition,
-    store: fn {%{__struct__: Plug.Upload, path: "/path/to/my/file.png", filename: "file.png"},
-               %TestUser{}} ->
+    store: fn {%{__struct__: Plug.Upload, path: "/path/to/my/file.png", filename: "file.png"}, %TestUser{}} ->
       {:error, :invalid_file}
     end do
     upload = build_upload("/path/to/my/file.png")
@@ -108,8 +109,7 @@ defmodule WaffleTest.Ecto.Schema do
   end
 
   test_with_mock "cascades custom storage error into an error", DummyDefinition,
-    store: fn {%{__struct__: Plug.Upload, path: "/path/to/my/file.png", filename: "file.png"},
-               %TestUser{}} ->
+    store: fn {%{__struct__: Plug.Upload, path: "/path/to/my/file.png", filename: "file.png"}, %TestUser{}} ->
       {:error, "file type is invalid"}
     end do
     upload = build_upload("/path/to/my/file.png")
@@ -126,8 +126,7 @@ defmodule WaffleTest.Ecto.Schema do
   end
 
   test_with_mock "converts changeset into schema", DummyDefinition,
-    store: fn {%{__struct__: Plug.Upload, path: "/path/to/my/file.png", filename: "file.png"},
-               %TestUser{}} ->
+    store: fn {%{__struct__: Plug.Upload, path: "/path/to/my/file.png", filename: "file.png"}, %TestUser{}} ->
       {:error, :invalid_file}
     end do
     upload = build_upload("/path/to/my/file.png")
@@ -139,8 +138,7 @@ defmodule WaffleTest.Ecto.Schema do
   end
 
   test_with_mock "applies changes to schema", DummyDefinition,
-    store: fn {%{__struct__: Plug.Upload, path: "/path/to/my/file.png", filename: "file.png"},
-               %TestUser{}} ->
+    store: fn {%{__struct__: Plug.Upload, path: "/path/to/my/file.png", filename: "file.png"}, %TestUser{}} ->
       {:error, :invalid_file}
     end do
     upload = build_upload("/path/to/my/file.png")
@@ -152,8 +150,7 @@ defmodule WaffleTest.Ecto.Schema do
   end
 
   test_with_mock "converts atom keys", DummyDefinition,
-    store: fn {%{__struct__: Plug.Upload, path: "/path/to/my/file.png", filename: "file.png"},
-               %TestUser{}} ->
+    store: fn {%{__struct__: Plug.Upload, path: "/path/to/my/file.png", filename: "file.png"}, %TestUser{}} ->
       {:error, :invalid_file}
     end do
     upload = build_upload("/path/to/my/file.png")
@@ -165,8 +162,7 @@ defmodule WaffleTest.Ecto.Schema do
   end
 
   test_with_mock "casting nil attachments", DummyDefinition,
-    store: fn {%{__struct__: Plug.Upload, path: "/path/to/my/file.png", filename: "file.png"},
-               %TestUser{}} ->
+    store: fn {%{__struct__: Plug.Upload, path: "/path/to/my/file.png", filename: "file.png"}, %TestUser{}} ->
       {:ok, "file.png"}
     end do
     changeset =
@@ -176,8 +172,7 @@ defmodule WaffleTest.Ecto.Schema do
     assert nil == Ecto.Changeset.get_field(changeset, :avatar)
   end
 
-  test_with_mock "casting empty attachments", DummyDefinition,
-    store: fn {"", %TestUser{}} -> {:ok, ""} end do
+  test_with_mock "casting empty attachments", DummyDefinition, store: fn {"", %TestUser{}} -> {:ok, ""} end do
     changeset = TestUser.path_changeset(%TestUser{}, %{"avatar" => ""})
     assert nil == Ecto.Changeset.get_field(changeset, :avatar)
     assert not called(DummyDefinition.store({"", %TestUser{}}))
@@ -185,7 +180,11 @@ defmodule WaffleTest.Ecto.Schema do
 
   test_with_mock "allow_paths => true", DummyDefinition,
     store: fn {"/path/to/my/file.png", %TestUser{}} -> {:ok, "file.png"} end do
-    TestUser.path_changeset(%TestUser{}, %{"avatar" => "  /path/to/my/file.png  "})
+    changeset = TestUser.path_changeset(%TestUser{}, %{"avatar" => "  /path/to/my/file.png  "})
+
+    assert changeset.valid?
+    assert %{avatar: %{file_name: "file.png", updated_at: %NaiveDateTime{}}} = changeset.changes
+
     assert called(DummyDefinition.store({"/path/to/my/file.png", %TestUser{}}))
   end
 
@@ -193,22 +192,26 @@ defmodule WaffleTest.Ecto.Schema do
     store: fn {%{path: "/path/to/my/file.png", filename: "avatar.png"}, %TestUser{}} ->
       {:ok, "file.png"}
     end do
-    TestUser.path_changeset(%TestUser{}, %{
-      "avatar" => %{path: "  /path/to/my/file.png  ", filename: "avatar.png"}
-    })
+    changeset =
+      TestUser.path_changeset(%TestUser{}, %{
+        "avatar" => %{path: "  /path/to/my/file.png  ", filename: "avatar.png"}
+      })
 
-    assert called(
-             DummyDefinition.store(
-               {%{path: "/path/to/my/file.png", filename: "avatar.png"}, %TestUser{}}
-             )
-           )
+    assert changeset.valid?
+    assert %{avatar: %{file_name: "file.png", updated_at: %NaiveDateTime{}}} = changeset.changes
+
+    assert called(DummyDefinition.store({%{path: "/path/to/my/file.png", filename: "avatar.png"}, %TestUser{}}))
   end
 
   test_with_mock "allow_urls => true", DummyDefinition,
     store: fn {"http://external.url/file.png", %TestUser{}} ->
       {:ok, "file.png"}
     end do
-    TestUser.url_changeset(%TestUser{}, %{"avatar" => "   http://external.url/file.png   "})
+    changeset = TestUser.url_changeset(%TestUser{}, %{"avatar" => "   http://external.url/file.png   "})
+
+    assert changeset.valid?
+    assert %{avatar: %{file_name: "file.png", updated_at: %NaiveDateTime{}}} = changeset.changes
+
     assert called(DummyDefinition.store({"http://external.url/file.png", %TestUser{}}))
   end
 
@@ -216,22 +219,26 @@ defmodule WaffleTest.Ecto.Schema do
     store: fn {%{path: "http://external.url/file.png", filename: "avatar.png"}, %TestUser{}} ->
       {:ok, "file.png"}
     end do
-    TestUser.url_changeset(%TestUser{}, %{
-      "avatar" => %{path: "   http://external.url/file.png   ", filename: "avatar.png"}
-    })
+    changeset =
+      TestUser.url_changeset(%TestUser{}, %{
+        "avatar" => %{path: "   http://external.url/file.png   ", filename: "avatar.png"}
+      })
 
-    assert called(
-             DummyDefinition.store(
-               {%{path: "http://external.url/file.png", filename: "avatar.png"}, %TestUser{}}
-             )
-           )
+    assert changeset.valid?
+    assert %{avatar: %{file_name: "file.png", updated_at: %NaiveDateTime{}}} = changeset.changes
+
+    assert called(DummyDefinition.store({%{path: "http://external.url/file.png", filename: "avatar.png"}, %TestUser{}}))
   end
 
   test_with_mock "allow_urls => true with an invalid URL", DummyDefinition,
     store: fn {"/path/to/my/file.png", %TestUser{}} ->
       {:ok, "file.png"}
     end do
-    TestUser.url_changeset(%TestUser{}, %{"avatar" => "/path/to/my/file.png"})
+    changeset = TestUser.url_changeset(%TestUser{}, %{"avatar" => "/path/to/my/file.png"})
+
+    refute changeset.valid?
+    assert %{} == changeset.changes
+
     assert not called(DummyDefinition.store({"/path/to/my/file.png", %TestUser{}}))
   end
 
@@ -239,14 +246,31 @@ defmodule WaffleTest.Ecto.Schema do
     store: fn {%{filename: "/path/to/my/file.png", binary: <<1, 2, 3>>}, %TestUser{}} ->
       {:ok, "file.png"}
     end do
-    TestUser.changeset(%TestUser{}, %{
-      "avatar" => %{filename: "/path/to/my/file.png", binary: <<1, 2, 3>>}
-    })
+    changeset =
+      TestUser.changeset(%TestUser{}, %{
+        "avatar" => %{filename: "/path/to/my/file.png", binary: <<1, 2, 3>>}
+      })
 
-    assert called(
-             DummyDefinition.store(
-               {%{filename: "/path/to/my/file.png", binary: <<1, 2, 3>>}, %TestUser{}}
-             )
-           )
+    assert changeset.valid?
+    assert %{avatar: %{file_name: "file.png", updated_at: %NaiveDateTime{}}} = changeset.changes
+
+    assert called(DummyDefinition.store({%{filename: "/path/to/my/file.png", binary: <<1, 2, 3>>}, %TestUser{}}))
+  end
+
+  test_with_mock "allow casting already uploaded files", DummyDefinition,
+    store: fn {"file.png", %TestUser{}} ->
+      {:ok, "file.png"}
+    end do
+    updated_at = ~N[2025-10-29 11:19:02.943392]
+
+    changeset =
+      TestUser.changeset(%TestUser{}, %{
+        "avatar" => %{file_name: "file.png", updated_at: updated_at}
+      })
+
+    assert changeset.valid?
+    assert changeset.changes == %{avatar: %{file_name: "file.png", updated_at: updated_at}}
+
+    assert not called(DummyDefinition.store({%{file_name: "file.png", updated_at: updated_at}, %TestUser{}}))
   end
 end
